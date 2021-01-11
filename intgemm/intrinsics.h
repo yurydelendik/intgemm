@@ -3,11 +3,15 @@
 #include "intgemm/intgemm_config.h"
 #include "types.h"
 
+#ifndef __wasm__
 #include <tmmintrin.h>
 #include <emmintrin.h>
 #include <xmmintrin.h>
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 #include <immintrin.h>
+#endif
+#else
+#include <cmath>
 #endif
 
 #include <cstdint>
@@ -32,6 +36,7 @@ template <class Register> static inline Register setzero_pd();
 template <class Register> static inline Register setzero_ps();
 template <class Register> static inline Register setzero_si();
 
+#ifndef __wasm__
 /*
  *
  * SSE2
@@ -211,6 +216,9 @@ INTGEMM_SSE2 static inline __m128i unpackhi_epi64(__m128i a, __m128i b) {
 INTGEMM_SSE2 static inline __m128i xor_si(__m128i a, __m128i b) {
   return _mm_xor_si128(a, b);
 }
+#else
+#include "wasm_ops.inl"
+#endif
 
 /*
  *

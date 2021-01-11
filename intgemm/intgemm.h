@@ -49,7 +49,7 @@
 #include "avx512_gemm.h"
 #include "avx512vnni_gemm.h"
 
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) || defined(__wasm__)
 // No header for CPUID since it's hard-coded.
 #elif defined(__INTEL_COMPILER)
 #include <immintrin.h>
@@ -60,66 +60,72 @@
 #include <cpuid.h>
 #endif
 
+#ifdef __EXCEPTIONS
+#define THROW_UNSUPP_CPU throw UnsupportedCPU();
+#else
+#define THROW_UNSUPP_CPU __builtin_trap();
+#endif
+
 /* Dispatch to functions based on runtime CPUID.  This adds one call-by-variable to each call. */
 
 namespace intgemm {
 
 struct Unsupported_16bit {
   static void Quantize(const float *, int16_t *, float, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void PrepareB(const float *, int16_t *, float, Index, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void PrepareBQuantizedTransposed(const int16_t *, int16_t *, Index, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void PrepareBTransposed(const float *, int16_t *, float, Index, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void SelectColumnsB(const int16_t *, int16_t *, Index, const Index *, const Index *) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   template <typename Callback>
   static void Multiply(const int16_t *, const int16_t *, Index, Index, Index, Callback) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   constexpr static const char *const kName = "16-bit Unsupported";
 };
 
 struct Unsupported_8bit {
   static void Quantize(const float *, int8_t *, float, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void QuantizeU(const float *, uint8_t *, float, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void PrepareA(const float *, int8_t *, float, Index, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void PrepareBQuantizedTransposed(const int8_t *, int8_t *, Index, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void PrepareBTransposed(const float *, int8_t *, float, Index, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void PrepareB(const float *, int8_t *, float, Index, Index) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   template<class Callback>
   static void PrepareBias(const int8_t *, Index, Index, Callback) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   static void SelectColumnsB(const int8_t *, int8_t *, Index, const Index *, const Index *) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   template <typename Callback>
   static void Multiply(const int8_t *, const int8_t *, Index, Index, Index, Callback) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
   template<class Callback>
   static void Multiply8Shift(const uint8_t *, const int8_t *, Index, Index, Index, Callback) {
-    throw UnsupportedCPU();
+    THROW_UNSUPP_CPU
   }
 
   constexpr static const char *const kName = "8-bit Unsupported";
@@ -171,15 +177,15 @@ template <class T> T ChooseCPU(T
     avx2
 #endif
     , T ssse3, T
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(__wasm__)
     sse2
 #endif
     , T
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(__wasm__)
     unsupported
 #endif
     ) {
-#if defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__) || defined(__wasm__)
   // emscripten does SSE4.1 but we only use up to SSSE3.
   return ssse3;
 #elif defined(__INTEL_COMPILER)

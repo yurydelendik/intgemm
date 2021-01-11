@@ -18,7 +18,11 @@ template <class T> class AlignedVector {
       if (!mem_) throw std::bad_alloc();
 #else      
       if (posix_memalign(reinterpret_cast<void **>(&mem_), 64, size * sizeof(T))) {
+#ifdef __EXCEPTIONS
         throw std::bad_alloc();
+#else
+        __builtin_trap();
+#endif
       }
 #endif
     }

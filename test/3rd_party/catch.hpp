@@ -161,7 +161,7 @@ namespace Catch {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Assume that non-Windows platforms support posix signals by default
-#if !defined(CATCH_PLATFORM_WINDOWS)
+#if !defined(CATCH_PLATFORM_WINDOWS) && !defined(__wasm__)
     #define CATCH_INTERNAL_CONFIG_POSIX_SIGNALS
 #endif
 
@@ -7805,6 +7805,7 @@ namespace Catch {
                 config.warnings = static_cast<WarnAbout::What>( config.warnings | warningSet );
                 return ParserResult::ok( ParseResultType::Matched );
             };
+#ifndef __wasm__            
         auto const loadTestNamesFromFile = [&]( std::string const& filename ) {
                 std::ifstream f( filename.c_str() );
                 if( !f.is_open() )
@@ -7821,6 +7822,7 @@ namespace Catch {
                 }
                 return ParserResult::ok( ParseResultType::Matched );
             };
+#endif
         auto const setTestOrder = [&]( std::string const& order ) {
                 if( startsWith( "declared", order ) )
                     config.runOrder = RunTests::InDeclarationOrder;
@@ -7909,9 +7911,11 @@ namespace Catch {
             | Opt( config.showInvisibles )
                 ["-i"]["--invisibles"]
                 ( "show invisibles (tabs, newlines)" )
+#ifndef __wasm__                
             | Opt( config.outputFilename, "filename" )
                 ["-o"]["--out"]
                 ( "output filename" )
+#endif
             | Opt( setReporter, "name" )
                 ["-r"]["--reporter"]
                 ( "reporter to use (defaults to console)" )
@@ -7930,9 +7934,11 @@ namespace Catch {
             | Opt( [&]( bool flag ) { config.showDurations = flag ? ShowDurations::Always : ShowDurations::Never; }, "yes|no" )
                 ["-d"]["--durations"]
                 ( "show test durations" )
+#ifndef __wasm__
             | Opt( loadTestNamesFromFile, "filename" )
                 ["-f"]["--input-file"]
                 ( "load test names to run from a file" )
+#endif
             | Opt( config.filenamesAsTags )
                 ["-#"]["--filenames-as-tags"]
                 ( "adds a tag for the filename" )
@@ -8446,7 +8452,7 @@ namespace Catch {
         }
     } // namespace Catch
 
-#elif defined(CATCH_PLATFORM_LINUX)
+#elif defined(CATCH_PLATFORM_LINUX) && !defined(__wasm__)
     #include <fstream>
     #include <string>
 
@@ -11219,7 +11225,7 @@ namespace Catch {
         };
 
         ///////////////////////////////////////////////////////////////////////////
-
+#ifndef __wasm__
         class FileStream : public IStream {
             mutable std::ofstream m_ofs;
         public:
@@ -11233,7 +11239,7 @@ namespace Catch {
                 return m_ofs;
             }
         };
-
+#endif
         ///////////////////////////////////////////////////////////////////////////
 
         class CoutStream : public IStream {
@@ -11279,7 +11285,11 @@ namespace Catch {
                 CATCH_ERROR( "Unrecognised stream: '" << filename << "'" );
         }
         else
+#ifdef __wasm__
+            __builtin_trap();
+#else
             return new detail::FileStream( filename );
+#endif
     }
 
     // This class encapsulates the idea of a pool of ostringstreams that can be reused.

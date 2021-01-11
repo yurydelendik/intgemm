@@ -1,9 +1,17 @@
 #pragma once
+
+#ifndef __wasm__
 #include <exception>
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 #include <immintrin.h>
 #endif
 #include <emmintrin.h>
+#else
+#include <wasm_simd128.h>
+typedef v128_t __m128i;
+typedef __f32x4 __m128;
+typedef __f64x2 __m128d;
+#endif
 
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)
 /* MSVC does not appear to have target attributes but is also fine with just
@@ -41,6 +49,7 @@
 #endif
 namespace intgemm {
 
+#ifdef __EXCEPTIONS
 // This will be thrown if a CPU isn't supported by the routines (16-bit without SSE2 or 8-bit without SSSE3).
 class UnsupportedCPU : public std::exception {
   public:
@@ -52,6 +61,7 @@ class UnsupportedCPU : public std::exception {
       return "Integer matrix multiplication has not been efficiently implemented for your CPU.";
     }
 };
+#endif
 
 typedef unsigned int Index;
 
@@ -62,7 +72,8 @@ enum class CPUType {
   SSSE3,
   AVX2,
   AVX512BW,
-  AVX512VNNI
+  AVX512VNNI,
+  WASM,
 };
 
 // Running CPU type.  This is defined in intgemm.cc (as the dispatcher).

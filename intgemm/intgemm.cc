@@ -4,11 +4,19 @@
 namespace intgemm {
 
 float Unsupported_MaxAbsolute(const float * /*begin*/, const float * /*end*/) {
+#ifdef __EXCEPTIONS
   throw UnsupportedCPU();
+#else
+  __builtin_trap();
+#endif
 }
 
 MeanStd Unsupported_VectorMeanStd(const float * /*begin*/, const float * /*end*/, bool /*absolute*/) {
+#ifdef __EXCEPTIONS
   throw UnsupportedCPU();
+#else
+  __builtin_trap();
+#endif
 }
 
 void (*Int16::Quantize)(const float *input, int16_t *output, float quant_mult, Index size) = ChooseCPU(AVX512BW::Kernels16::Quantize, AVX512BW::Kernels16::Quantize, AVX2::Kernels16::Quantize, SSE2::Kernels16::Quantize, SSE2::Kernels16::Quantize, Unsupported_16bit::Quantize);
