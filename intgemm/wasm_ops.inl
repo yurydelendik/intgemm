@@ -1,3 +1,8 @@
+#define WASM_ENABLED_FOR_ION 1
+#ifdef WASM_ENABLED_FOR_ION
+#define WASM_ENABLED_FOR_WORMHOLE 1
+#endif
+
 static inline __m128i _mm_cmpneq_ps(__m128 a, __m128 b) {
   return a != b;
 }
@@ -23,9 +28,9 @@ static inline __m128i _mm_srli_si128(__m128i a, int c) {
   // psrldq xmm, imm8
   if (c != 4)
     __builtin_trap();
-  __i8x16 r = __builtin_wasm_replace_lane_i8x16((__i8x16)a, /* index = */ 0, 0);
+  __i8x16 r = (__i8x16)__builtin_wasm_replace_lane_i32x4((__i32x4)a, /* index = */ 0, 0);
   return __builtin_wasm_shuffle_v8x16(r, r,
-      4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0);
+      4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3);
 }
 static inline __m128i _mm_shuffle_epi32(__m128i a, int c) {
   // pshufd xmm, imm8
@@ -176,10 +181,15 @@ static inline __m128d max_pd(__m128d a, __m128d b) {
   return __builtin_wasm_max_f64x2(a, b);
 }
 static inline __m128i cvtps_epi32(__m128 a) {
+#ifdef WASM_ENABLED_FOR_ION
+  return __builtin_convertvector(
+    __builtin_wasm_nearest_f32x4((__f32x4)a), __i32x4);
+#else
   return __builtin_convertvector(
     __f32x4{
       nearbyintf(((__f32x4)a)[0]), nearbyintf(((__f32x4)a)[1]),
       nearbyintf(((__f32x4)a)[2]), nearbyintf(((__f32x4)a)[3])}, __i32x4);
+#endif
 }
 static inline __m128i cvttps_epi32(__m128 a) {
   return __builtin_wasm_trunc_saturate_s_i32x4_f32x4((__f32x4)a);
@@ -189,9 +199,13 @@ static inline __m128 cvtepi32_ps(__m128i a) {
 }
 static inline __m128i madd_epi16(__m128i a, __m128i b) {
   // pmaddwd xmm, xmm
+#ifdef WASM_ENABLED_FOR_WORMHOLE
+  return wasm_v8x16_shuffle(a, b, 31, 0, 30, 2, 29, 4, 28, 6, 27, 8, 26, 10, 25, 12, 24, 2 /* PMADDWD */);
+#else
   __i32x4 c = ((((__i32x4)a) << 16) >> 16) * ((((__i32x4)b) << 16) >> 16);
   __i32x4 d = (((__i32x4)a) >> 16) * (((__i32x4)b) >> 16);
   return c + d;
+#endif
 }
 static inline __m128i add_epi8(__m128i a, __m128i b) {
   return ((__i8x16)a) + ((__i8x16)b);
@@ -208,6 +222,9 @@ static inline __m128i adds_epi16(__m128i a, __m128i b) {
 }
 static inline __m128i maddubs_epi16(__m128i a, __m128i b) {
   // pmaddubsw xmm, xmm
+#ifdef WASM_ENABLED_FOR_WORMHOLE
+  return wasm_v8x16_shuffle(a, b, 31, 0, 30, 2, 29, 4, 28, 6, 27, 8, 26, 10, 25, 12, 24, 1 /* PMADDUBSW */);
+#else
   __i16x8 c =
     ((__i16x8)((((__u16x8)a) << 8) >> 8)) *
     ((((__i16x8)b) << 8) >> 8);
@@ -215,6 +232,7 @@ static inline __m128i maddubs_epi16(__m128i a, __m128i b) {
     ((__i16x8)(((__u16x8)a) >> 8)) *
     (((__i16x8)b) >> 8);
   return __builtin_wasm_add_saturate_s_i16x8(c, d);
+#endif
 }
 static inline __m128 max_epi16(__m128 a, __m128 b) {
   return __builtin_wasm_max_s_i16x8((__i16x8)a, (__i16x8)b);
@@ -285,3 +303,6 @@ template <> inline __m128 set1_ps<__m128>(float to) {
 template <> inline __m128 loadu_ps(const float* mem_addr) {
   return _mm_loadu_ps(mem_addr);
 }
+
+#undef WASM_ENABLED_FOR_ION
+#undef WASM_ENABLED_FOR_WORMHOLE
