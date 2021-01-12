@@ -1,7 +1,4 @@
-#define WASM_ENABLED_FOR_ION 1
-#ifdef WASM_ENABLED_FOR_ION
-#define WASM_ENABLED_FOR_WORMHOLE 1
-#endif
+//#define WASM_ENABLED_FOR_WORMHOLE 1
 
 static inline __m128i _mm_cmpneq_ps(__m128 a, __m128 b) {
   return a != b;
@@ -181,15 +178,8 @@ static inline __m128d max_pd(__m128d a, __m128d b) {
   return __builtin_wasm_max_f64x2(a, b);
 }
 static inline __m128i cvtps_epi32(__m128 a) {
-#ifdef WASM_ENABLED_FOR_ION
   return __builtin_convertvector(
     __builtin_wasm_nearest_f32x4((__f32x4)a), __i32x4);
-#else
-  return __builtin_convertvector(
-    __f32x4{
-      nearbyintf(((__f32x4)a)[0]), nearbyintf(((__f32x4)a)[1]),
-      nearbyintf(((__f32x4)a)[2]), nearbyintf(((__f32x4)a)[3])}, __i32x4);
-#endif
 }
 static inline __m128i cvttps_epi32(__m128 a) {
   return __builtin_wasm_trunc_saturate_s_i32x4_f32x4((__f32x4)a);
@@ -304,5 +294,4 @@ template <> inline __m128 loadu_ps(const float* mem_addr) {
   return _mm_loadu_ps(mem_addr);
 }
 
-#undef WASM_ENABLED_FOR_ION
 #undef WASM_ENABLED_FOR_WORMHOLE

@@ -1,6 +1,6 @@
 const fs = require("fs");
 
-//node --experimental-wasm-simd --wasm-simd-post-mvp run-node.js
+//node --experimental-wasm-simd --wasm-simd-post-mvp run-test-node.js
 async function init() {
   const stub_buf = fs.readFileSync("./wasi-stub.wasm");
   let memory;
@@ -36,7 +36,7 @@ async function init() {
     },
   });
 
-  const buf = fs.readFileSync("./wasm/tests");
+  const buf = fs.readFileSync("./wasm/benchmark");
   const imports = {
     wasi_snapshot_preview1: stub.instance.exports,
   };

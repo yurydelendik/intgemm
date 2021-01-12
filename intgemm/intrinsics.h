@@ -10,8 +10,6 @@
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 #include <immintrin.h>
 #endif
-#else
-#include <cmath>
 #endif
 
 #include <cstdint>
