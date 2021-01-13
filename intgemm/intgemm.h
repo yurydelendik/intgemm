@@ -48,6 +48,7 @@
 #include "avx2_gemm.h"
 #include "avx512_gemm.h"
 #include "avx512vnni_gemm.h"
+#include "wasm_gemm.h"
 
 #if defined(__EMSCRIPTEN__) || defined(__wasm__)
 // No header for CPUID since it's hard-coded.
@@ -176,18 +177,28 @@ template <class T> T ChooseCPU(T
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
     avx2
 #endif
-    , T ssse3, T
+    , T
+#if !defined(__wasm__)
+     ssse3
+#endif
+    , T
 #if !defined(__EMSCRIPTEN__) && !defined(__wasm__)
     sse2
+#endif
+    , T
+#ifdef __wasm__
+    wasm
 #endif
     , T
 #if !defined(__EMSCRIPTEN__) && !defined(__wasm__)
     unsupported
 #endif
     ) {
-#if defined(__EMSCRIPTEN__) || defined(__wasm__)
+#if defined(__EMSCRIPTEN__)
   // emscripten does SSE4.1 but we only use up to SSSE3.
   return ssse3;
+#elif defined(__wasm__)
+  return wasm;
 #elif defined(__INTEL_COMPILER)
 #  ifdef INTGEMM_COMPILER_SUPPORTS_AVX512VNNI
   if (_may_i_use_cpu_feature(_FEATURE_AVX512_VNNI)) return avx512vnni;
@@ -315,7 +326,7 @@ private:
 };
 
 template <typename Callback>
-void (*Int8::MultiplyImpl<Callback>::run)(const int8_t *A, const int8_t *B, Index A_rows, Index width, Index B_cols, Callback callback) = ChooseCPU(OMPParallelWrap<Callback, AVX512VNNI::Kernels8>, OMPParallelWrap<Callback, AVX512BW::Kernels8>, OMPParallelWrap<Callback, AVX2::Kernels8>, OMPParallelWrap<Callback, SSSE3::Kernels8>, Unsupported_8bit::Multiply<Callback>, Unsupported_8bit::Multiply<Callback>);
+void (*Int8::MultiplyImpl<Callback>::run)(const int8_t *A, const int8_t *B, Index A_rows, Index width, Index B_cols, Callback callback) = ChooseCPU(OMPParallelWrap<Callback, AVX512VNNI::Kernels8>, OMPParallelWrap<Callback, AVX512BW::Kernels8>, OMPParallelWrap<Callback, AVX2::Kernels8>, OMPParallelWrap<Callback, SSSE3::Kernels8>, Unsupported_8bit::Multiply<Callback>, OMPParallelWrap<Callback, Wasm::Kernels8>, Unsupported_8bit::Multiply<Callback>);
 
 /*
  * 8-bit matrix multiplication with shifting A by 127
@@ -383,10 +394,12 @@ void (*Int8Shift::MultiplyImpl<Callback>::run)(const uint8_t *A, const int8_t *B
     OMPParallelWrap8Shift<Callback, AVX512BW::Kernels8>,
     OMPParallelWrap8Shift<Callback, AVX2::Kernels8>,
     OMPParallelWrap8Shift<Callback, SSSE3::Kernels8>, 
-    Unsupported_8bit::Multiply8Shift<Callback>, Unsupported_8bit::Multiply8Shift<Callback>);
+    Unsupported_8bit::Multiply8Shift<Callback>,
+    OMPParallelWrap8Shift<Callback, Wasm::Kernels8>,
+    Unsupported_8bit::Multiply8Shift<Callback>);
 
 template <class Callback>
-void (*Int8Shift::PrepareBiasImpl<Callback>::run)(const int8_t *B, Index width, Index B_cols, Callback callback) = ChooseCPU(AVX512VNNI::Kernels8::PrepareBias<Callback>, AVX512BW::Kernels8::PrepareBias<Callback>, AVX2::Kernels8::PrepareBias<Callback>, SSSE3::Kernels8::PrepareBias<Callback>, SSSE3::Kernels8::PrepareBias<Callback>, Unsupported_8bit::PrepareBias);
+void (*Int8Shift::PrepareBiasImpl<Callback>::run)(const int8_t *B, Index width, Index B_cols, Callback callback) = ChooseCPU(AVX512VNNI::Kernels8::PrepareBias<Callback>, AVX512BW::Kernels8::PrepareBias<Callback>, AVX2::Kernels8::PrepareBias<Callback>, SSSE3::Kernels8::PrepareBias<Callback>, SSSE3::Kernels8::PrepareBias<Callback>, Wasm::Kernels8::PrepareBias<Callback>, Unsupported_8bit::PrepareBias);
 
 /*
  * 16-bit matrix multiplication
@@ -442,7 +455,7 @@ private:
 };
 
 template <typename Callback>
-void (*Int16::MultiplyImpl<Callback>::run)(const int16_t *A, const int16_t *B, Index A_rows, Index width, Index B_cols, Callback callback) = ChooseCPU(OMPParallelWrap<Callback, AVX512BW::Kernels16> /*TODO VNNI 16-bit. */, OMPParallelWrap<Callback, AVX512BW::Kernels16>, OMPParallelWrap<Callback, AVX2::Kernels16>, OMPParallelWrap<Callback, SSE2::Kernels16>, OMPParallelWrap<Callback, SSE2::Kernels16>, Unsupported_16bit::Multiply<Callback>);
+void (*Int16::MultiplyImpl<Callback>::run)(const int16_t *A, const int16_t *B, Index A_rows, Index width, Index B_cols, Callback callback) = ChooseCPU(OMPParallelWrap<Callback, AVX512BW::Kernels16> /*TODO VNNI 16-bit. */, OMPParallelWrap<Callback, AVX512BW::Kernels16>, OMPParallelWrap<Callback, AVX2::Kernels16>, OMPParallelWrap<Callback, SSE2::Kernels16>, OMPParallelWrap<Callback, SSE2::Kernels16>, OMPParallelWrap<Callback, Wasm::Kernels16>, Unsupported_16bit::Multiply<Callback>);
 
 extern const CPUType kCPU;
 

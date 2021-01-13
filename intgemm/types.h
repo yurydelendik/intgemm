@@ -47,6 +47,7 @@ typedef __f64x2 __m128d;
   #define INTGEMM_AVX512DQ __attribute__ ((target ("avx512f,avx512bw,avx512dq")))
   #define INTGEMM_AVX512VNNI __attribute__ ((target ("avx512f,avx512bw,avx512dq,avx512vnni")))
 #endif
+#define INTGEMM_WASM
 namespace intgemm {
 
 #ifdef __EXCEPTIONS
@@ -70,10 +71,10 @@ enum class CPUType {
   UNSUPPORTED = 0,
   SSE2,
   SSSE3,
+  WASM,
   AVX2,
   AVX512BW,
   AVX512VNNI,
-  WASM,
 };
 
 // Running CPU type.  This is defined in intgemm.cc (as the dispatcher).
@@ -107,6 +108,10 @@ typedef __m128i Register;
 typedef __m128 FRegister;
 } // namespace SSSE3
 namespace SSE2 {
+typedef __m128i Register;
+typedef __m128 FRegister;
+} // namespace SSE2
+namespace Wasm {
 typedef __m128i Register;
 typedef __m128 FRegister;
 } // namespace SSE2

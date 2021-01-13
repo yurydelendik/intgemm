@@ -9,8 +9,11 @@
 #elif defined(KERNELS_THIS_IS_AVX512BW)
   #define CPU_NAME AVX512BW
   #define CPU_ATTR INTGEMM_AVX512BW
+#elif defined(KERNELS_THIS_IS_WASM)
+  #define CPU_NAME WASM
+  #define CPU_ATTR INTGEMM_WASM
 #else
-  #error "Only SSE2, AVX2 and AVX512BW are supported"
+  #error "Only SSE2, WASM, AVX2 and AVX512BW are supported"
 #endif
 
 #define vi vector_t<CPUType::CPU_NAME, int>
@@ -99,6 +102,8 @@ CPU_ATTR inline vi relu<int8_t>(vi input) {
   static const auto vconst_zero = set1_epi8<vi>(0);
 #if defined(KERNELS_THIS_IS_SSE2)
   return and_si(input, _mm_cmplt_epi8(vconst_zero, input));
+#elif defined(KERNELS_THIS_IS_WASM)
+  return input & (((__i8x16)input) >= vconst_zero);
 #elif defined(KERNELS_THIS_IS_AVX2)
   return _mm256_max_epi8(input, vconst_zero);
 #else
@@ -117,6 +122,8 @@ CPU_ATTR inline vi relu<int>(vi input) {
   static const auto vconst_zero = set1_epi32<vi>(0);
 #if defined(KERNELS_THIS_IS_SSE2)
   return and_si(input, _mm_cmplt_epi32(vconst_zero, input));
+#elif defined(KERNELS_THIS_IS_WASM)
+  return wasm_i32x4_max(input, vconst_zero);
 #elif defined(KERNELS_THIS_IS_AVX2)
   return _mm256_max_epi32(input, vconst_zero);
 #else
@@ -156,11 +163,11 @@ CPU_ATTR inline vi multiply<int16_t>(vi a, vi b) {
 
 template <>
 CPU_ATTR inline vi multiply<int>(vi a, vi b) {
-#if defined(KERNELS_THIS_IS_SSE2) && !defined(__wasm__)
+#if defined(KERNELS_THIS_IS_SSE2)
   auto even = mul_epu32(a, b);
   auto odd = mul_epu32(_mm_srli_si128(a, 4), _mm_srli_si128(b, 4));
   return unpacklo_epi32(_mm_shuffle_epi32(even, 0x8 /* = 0 0 2 0 */), _mm_shuffle_epi32(odd, 0x8 /* = 0 0 2 0 */));
-#elif defined(__wasm__)
+#elif defined(KERNELS_THIS_IS_WASM)
   return mullo_epi32(a, b);
 #elif defined(KERNELS_THIS_IS_AVX2)
   return _mm256_mullo_epi32(a, b);
@@ -185,7 +192,7 @@ CPU_ATTR inline vd multiply<double>(vd a, vd b) {
 CPU_ATTR static inline vi downcast32to8(vi input1, vi input2, vi input3, vi input4) {
   auto result = packs_epi16(packs_epi32(input1, input2), packs_epi32(input3, input4));
 
-#if defined(KERNELS_THIS_IS_SSE2)
+#if defined(KERNELS_THIS_IS_SSE2) || defined(KERNELS_THIS_IS_WASM)
   return result;
 #elif defined(KERNELS_THIS_IS_AVX2)
   return _mm256_shuffle_epi32(_mm256_permute4x64_epi64(result, 0xd8 /* = 0 2 1 3 */), 0xd8 /* = 0 2 1 3 */);
@@ -198,7 +205,7 @@ CPU_ATTR static inline vi downcast32to8(vi input1, vi input2, vi input3, vi inpu
 CPU_ATTR static inline vi downcast32to16(vi input1, vi input2) {
   auto result = packs_epi32(input1, input2);
 
-#if defined(KERNELS_THIS_IS_SSE2)
+#if defined(KERNELS_THIS_IS_SSE2) || defined(KERNELS_THIS_IS_WASM)
   return result;
 #elif defined(KERNELS_THIS_IS_AVX2)
   return _mm256_permute4x64_epi64(result, 0xd8 /* = 0 2 1 3 */);
@@ -211,7 +218,7 @@ CPU_ATTR static inline vi downcast32to16(vi input1, vi input2) {
 CPU_ATTR static inline vi downcast16to8(vi input1, vi input2) {
   auto result = packs_epi16(input1, input2);
 
-#if defined(KERNELS_THIS_IS_SSE2)
+#if defined(KERNELS_THIS_IS_SSE2) || defined(KERNELS_THIS_IS_WASM)
   return result;
 #elif defined(KERNELS_THIS_IS_AVX2)
   return _mm256_permute4x64_epi64(result, 0xd8 /* = 0 2 1 3 */);
@@ -229,6 +236,8 @@ CPU_ATTR static inline dvector_t<CPUType::CPU_NAME, int16_t> upcast8to16(vi inpu
 
 #if defined(KERNELS_THIS_IS_SSE2)
   auto higher_byte = _mm_cmpgt_epi8(vzero, input);
+#elif defined(KERNELS_THIS_IS_WASM)
+  auto higher_byte = ((__i16x8)input) <= vzero;
 #elif defined(KERNELS_THIS_IS_AVX2)
   input = _mm256_permute4x64_epi64(input, 0xd8 /* = 0 2 1 3 */);
   auto higher_byte = _mm256_cmpgt_epi8(vzero, input);
@@ -252,6 +261,8 @@ CPU_ATTR static inline dvector_t<CPUType::CPU_NAME, int> upcast16to32(vi input) 
 
 #if defined(KERNELS_THIS_IS_SSE2)
   auto higher_byte = _mm_cmpgt_epi16(vzero, input);
+#elif defined(KERNELS_THIS_IS_WASM)
+  auto higher_byte = ((__i16x8)input) <= vzero;
 #elif defined(KERNELS_THIS_IS_AVX2)
   input = _mm256_permute4x64_epi64(input, 0xd8 /* = 0 2 1 3 */);
   auto higher_byte = _mm256_cmpgt_epi16(vzero, input);
@@ -310,6 +321,8 @@ CPU_ATTR static inline vf floor(vf input) {
   auto nonintegers = _mm_cmpneq_ps(input, result);
 
   return sub_ps(result, and_ps(vconst_one, and_ps(negatives, nonintegers)));
+#elif defined(KERNELS_THIS_IS_WASM)
+  return __builtin_wasm_floor_f32x4(input);
 #elif defined(KERNELS_THIS_IS_AVX2)
   return _mm256_floor_ps(input);
 #else
@@ -330,7 +343,7 @@ CPU_ATTR static inline vf floor(vf input) {
 /*
  * Calculate approximation of e^x using Taylor series and lookup table
  */
-#if defined(KERNELS_THIS_IS_SSE2)
+#if defined(KERNELS_THIS_IS_SSE2) || defined(KERNELS_THIS_IS_WASM)
 CPU_ATTR static inline vf exp_approx_taylor(vf) {
   std::abort();
 }
@@ -393,11 +406,11 @@ CPU_ATTR static inline vf exp_approx_taylor(vf x) {
  * Sigmoid
  */
 CPU_ATTR static inline vf sigmoid(vf
-#ifndef KERNELS_THIS_IS_SSE2
+#if !defined(KERNELS_THIS_IS_SSE2) && !defined(KERNELS_THIS_IS_WASM)
     input
 #endif
     ) {
-#if defined(KERNELS_THIS_IS_SSE2)
+#if defined(KERNELS_THIS_IS_SSE2) || defined(KERNELS_THIS_IS_WASM)
   std::abort(); // TODO: missing exp_approx_taylor for SSE2
 #elif defined(KERNELS_THIS_IS_AVX2)
   static const auto vconst_zero = setzero_ps<vf>();
@@ -433,7 +446,7 @@ CPU_ATTR static inline vf sigmoid(vf
 /*
  * Tanh
  */
-#if defined(KERNELS_THIS_IS_SSE2)
+#if defined(KERNELS_THIS_IS_SSE2) || defined(KERNELS_THIS_IS_WASM)
 CPU_ATTR static inline vf tanh(vf) {
   std::abort(); // TODO: missing exp_approx_taylor for SSE2
 }

@@ -3,6 +3,7 @@
 #include "../intgemm/ssse3_gemm.h"
 #include "../intgemm/avx2_gemm.h"
 #include "../intgemm/avx512_gemm.h"
+#include "../intgemm/wasm_gemm.h"
 
 #include <chrono>
 #include <iomanip>

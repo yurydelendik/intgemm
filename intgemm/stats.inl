@@ -8,6 +8,9 @@
 #elif defined(INTGEMM_THIS_IS_SSE2)
 #define INTGEMM_ARCH SSE2
 #define INTGEMM_TARGET INTGEMM_SSE2
+#elif defined(INTGEMM_THIS_IS_WASM)
+#define INTGEMM_ARCH Wasm
+#define INTGEMM_TARGET INTGEMM_WASM
 #else
 #error Included with unexpected architecture
 #endif

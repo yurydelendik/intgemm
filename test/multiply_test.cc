@@ -368,6 +368,7 @@ template <class Routine> void TestMultiplyBias(Index A_rows, Index width, Index 
    int_tolerance, float_tolerance, MSE_float_tolerance, MSE_int_tolerance);
 }
 
+#ifndef __wasm__
 TEST_CASE ("Multiply SSE2 16bit", "[multiply]") {
   if (kCPU < CPUType::SSE2) return;
   TestMultiply<SSE2::Kernels16>(8, 256, 256, .1f, 1, 0.01f);
@@ -407,7 +408,48 @@ TEST_CASE ("Multiply SSSE3 8bit with bias", "[biased_multiply]") {
   TestMultiplyBias<SSSE3::Kernels8>(248, 256, 256, 1.7f, 1.7f, 0.1f, 0.012f);
   TestMultiplyBias<SSSE3::Kernels8>(200, 256, 256, 1.8f, 1.9f, 0.1f, 0.011f);
 }
+#endif
+#ifdef __wasm__
+TEST_CASE ("Multiply Wasm 16bit", "[multiply]") {
+  if (kCPU == CPUType::WASM) return;
+  TestMultiply<Wasm::Kernels16>(8, 256, 256, .1f, 1, 0.01f);
+  TestMultiply<Wasm::Kernels16>(8, 2048, 256, .1f, 1, 0.02f);
+  TestMultiply<Wasm::Kernels16>(320, 256, 256, .1f, 1, 0.01f);
+  TestMultiply<Wasm::Kernels16>(472, 256, 256, .1f, 1, 0.01f);
+  TestMultiply<Wasm::Kernels16>(248, 256, 256, .1f, 1, 0.01f);
+  TestMultiply<Wasm::Kernels16>(200, 256, 256, .1f, 1, 0.01f);
+}
 
+TEST_CASE ("Multiply Wasm 16bit with bias", "[biased_multiply]") {
+  if (kCPU == CPUType::WASM) return;
+  TestMultiplyBias<Wasm::Kernels16>(8, 256, 256, .1f, 1, 0.01f);
+  TestMultiplyBias<Wasm::Kernels16>(8, 2048, 256, .1f, 1, 0.02f);
+  TestMultiplyBias<Wasm::Kernels16>(320, 256, 256, .1f, 1, 0.01f);
+  TestMultiplyBias<Wasm::Kernels16>(472, 256, 256, .1f, 1, 0.01f);
+  TestMultiplyBias<Wasm::Kernels16>(248, 256, 256, .1f, 1, 0.01f);
+  TestMultiplyBias<Wasm::Kernels16>(200, 256, 256, .1f, 1, 0.01f);
+}
+
+TEST_CASE ("Multiply Wasm 8bit", "[multiply]") {
+  if (kCPU == CPUType::WASM) return;
+  TestMultiply<Wasm::Kernels8>(8, 256, 256, 1.2f, 1.2f, 0.064f, 0.026f);
+  TestMultiply<Wasm::Kernels8>(8, 2048, 256, 33, 33, 4.4f, 4.4f);
+  TestMultiply<Wasm::Kernels8>(320, 256, 256, 1.9f, 1.9f, 0.1f, 0.01f);
+  TestMultiply<Wasm::Kernels8>(472, 256, 256, 2.1f, 2.1f, 0.1f, 0.011f);
+  TestMultiply<Wasm::Kernels8>(248, 256, 256, 1.7f, 1.7f, 0.1f, 0.012f);
+  TestMultiply<Wasm::Kernels8>(200, 256, 256, 1.8f, 1.9f, 0.1f, 0.011f);
+}
+
+TEST_CASE ("Multiply Wasm 8bit with bias", "[biased_multiply]") {
+  if (kCPU == CPUType::WASM) return;
+  TestMultiplyBias<Wasm::Kernels8>(8, 256, 256, 1.2f, 1.2f, 0.064f, 0.026f);
+  TestMultiplyBias<Wasm::Kernels8>(8, 2048, 256, 33, 33, 4.4f, 4.4f);
+  TestMultiplyBias<Wasm::Kernels8>(320, 256, 256, 1.9f, 1.9f, 0.1f, 0.01f);
+  TestMultiplyBias<Wasm::Kernels8>(472, 256, 256, 2.1f, 2.1f, 0.1f, 0.011f);
+  TestMultiplyBias<Wasm::Kernels8>(248, 256, 256, 1.7f, 1.7f, 0.1f, 0.012f);
+  TestMultiplyBias<Wasm::Kernels8>(200, 256, 256, 1.8f, 1.9f, 0.1f, 0.011f);
+}
+#endif
 
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 TEST_CASE ("Multiply AVX2 8bit", "[multiply]") {

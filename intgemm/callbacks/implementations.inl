@@ -8,14 +8,21 @@
 #elif defined(CALLBACKS_THIS_IS_AVX512BW)
   #define CPU_NAME AVX512BW
   #define INTGEMM_TARGET INTGEMM_AVX512BW
+#elif defined(CALLBACKS_THIS_IS_WASM)
+  #define CPU_NAME WASM
+  #define INTGEMM_TARGET INTGEMM_WASM
 #else
-  #error "Only SSE2, AVX2 and AVX512BW are supported"
+  #error "Only SSE2, WASM, AVX2 and AVX512BW are supported"
 #endif
 
 #if defined(CALLBACKS_THIS_IS_SSE2)
   #define vi vector_t<CPUType::SSE2, int>
   #define vf vector_t<CPUType::SSE2, float>
   #define vd vector_t<CPUType::SSE2, double>
+#elif defined(CALLBACKS_THIS_IS_WASM)
+  #define vi vector_t<CPUType::WASM, int>
+  #define vf vector_t<CPUType::WASM, float>
+  #define vd vector_t<CPUType::WASM, double>
 #else
   #define vi vector_t<CPUType::AVX2, int>
   #define vf vector_t<CPUType::AVX2, float>

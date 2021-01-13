@@ -14,6 +14,12 @@
 #include "callbacks/implementations.inl"
 #undef CALLBACKS_THIS_IS_SSE2
 
+#ifdef __wasm__
+#define CALLBACKS_THIS_IS_WASM
+#include "callbacks/implementations.inl"
+#undef CALLBACKS_THIS_IS_WASM
+#endif
+
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 #define CALLBACKS_THIS_IS_AVX2
 #include "callbacks/implementations.inl"

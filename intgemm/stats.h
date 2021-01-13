@@ -63,6 +63,12 @@ constexpr int32_t kFloatAbsoluteMask = 0x7fffffff;
 #include "stats.inl"
 #undef INTGEMM_THIS_IS_SSE2
 
+#ifdef __wasm__
+#define INTGEMM_THIS_IS_WASM
+#include "stats.inl"
+#undef INTGEMM_THIS_IS_WASM
+#endif
+
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 #define INTGEMM_THIS_IS_AVX2
 #include "stats.inl"

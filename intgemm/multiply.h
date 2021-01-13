@@ -536,6 +536,24 @@ INTGEMM_SSSE3 inline static void InnerINTGEMM_SSSE3(
   sum6 = adds_epi16(sum6, maddubs_epi16(a_positive, sign_epi8(b[6], a)));
   sum7 = adds_epi16(sum7, maddubs_epi16(a_positive, sign_epi8(b[7], a)));
 }
+// For INTGEMM_WASM
+INTGEMM_WASM inline static void InnerINTGEMM_WASM(
+    __m128i a, const __m128i *b,
+    __m128i &sum0, __m128i &sum1, __m128i &sum2, __m128i &sum3,
+    __m128i &sum4, __m128i &sum5, __m128i &sum6, __m128i &sum7) {
+  
+  __m128i a_positive = abs_epi8(a);
+  __m128i a_sign_m = ((__i8x16)a) >> 7;
+  __u8x16 a_sign_i = ((__u8x16)a) >> 7;
+  sum0 = adds_epi16(sum0, maddubs_epi16(a_positive, (__u8x16)(b[0] ^ a_sign_m) + a_sign_i));
+  sum1 = adds_epi16(sum1, maddubs_epi16(a_positive, (__u8x16)(b[1] ^ a_sign_m) + a_sign_i));
+  sum2 = adds_epi16(sum2, maddubs_epi16(a_positive, (__u8x16)(b[2] ^ a_sign_m) + a_sign_i));
+  sum3 = adds_epi16(sum3, maddubs_epi16(a_positive, (__u8x16)(b[3] ^ a_sign_m) + a_sign_i));
+  sum4 = adds_epi16(sum4, maddubs_epi16(a_positive, (__u8x16)(b[4] ^ a_sign_m) + a_sign_i));
+  sum5 = adds_epi16(sum5, maddubs_epi16(a_positive, (__u8x16)(b[5] ^ a_sign_m) + a_sign_i));
+  sum6 = adds_epi16(sum6, maddubs_epi16(a_positive, (__u8x16)(b[6] ^ a_sign_m) + a_sign_i));
+  sum7 = adds_epi16(sum7, maddubs_epi16(a_positive, (__u8x16)(b[7] ^ a_sign_m) + a_sign_i));
+}
 //INTGEMM_AVX2 or INTGEMM_SSSE3 multiply
 #define INTGEMM_MULTIPLY8(Register, target, cpu_type) \
   template <typename Callback> target static void Multiply(const int8_t *A, const int8_t *B, Index A_rows, Index width, Index B_cols, Callback callback) { \

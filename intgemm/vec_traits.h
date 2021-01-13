@@ -18,6 +18,13 @@ template <> struct vector_s<CPUType::SSSE3, int16_t> { using type = __m128i; };
 template <> struct vector_s<CPUType::SSSE3, int> { using type = __m128i; };
 template <> struct vector_s<CPUType::SSSE3, float> { using type = __m128; };
 template <> struct vector_s<CPUType::SSSE3, double> { using type = __m128d; };
+#ifdef __wasm__
+template <> struct vector_s<CPUType::WASM, int8_t> { using type = __m128i; };
+template <> struct vector_s<CPUType::WASM, int16_t> { using type = __m128i; };
+template <> struct vector_s<CPUType::WASM, int> { using type = __m128i; };
+template <> struct vector_s<CPUType::WASM, float> { using type = __m128; };
+template <> struct vector_s<CPUType::WASM, double> { using type = __m128d; };
+#endif
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 template <> struct vector_s<CPUType::AVX2, int8_t> { using type = __m256i; };
 template <> struct vector_s<CPUType::AVX2, int16_t> { using type = __m256i; };

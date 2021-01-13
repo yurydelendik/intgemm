@@ -7,6 +7,7 @@
 #include "../intgemm/intgemm.h"
 #include "../intgemm/stats.h"
 #include "../intgemm/callbacks.h"
+#include "../intgemm/wasm_gemm.h"
 
 #include <algorithm>
 #include <cassert>
@@ -73,9 +74,11 @@ struct BackendStats {
   std::vector<std::vector<double>> avx2_8bit;
   std::vector<std::vector<double>> avx512_8bit;
   std::vector<std::vector<double>> avx512vnni_8bit;
+  std::vector<std::vector<double>> wasm_8bit;
   std::vector<std::vector<double>> sse2_16bit;
   std::vector<std::vector<double>> avx2_16bit;
   std::vector<std::vector<double>> avx512_16bit;
+  std::vector<std::vector<double>> wasm_16bit;
 };
 
 const float kOutlierThreshold = 0.75;
@@ -154,6 +157,19 @@ int main(int, char ** argv) {
     RunAll<SSE2::Kernels16>(matrices, end, stats.sse2_16bit);
   }
 
+#ifdef __wasm__
+  std::cerr << "Wasm 8bit, 100 samples..." << std::endl;
+  for (int samples = 0; samples < kSamples; ++samples) {
+    RandomMatrices *end = (samples < 4) ? matrices_end : full_sample;
+    RunAll<Wasm::Kernels8>(matrices, end, stats.wasm_8bit);
+  }
+
+  std::cerr << "Wasm 16bit, 100 samples..." << std::endl;
+  for (int samples = 0; samples < kSamples; ++samples) {
+    RandomMatrices *end = (samples < 4) ? matrices_end : full_sample;
+    RunAll<Wasm::Kernels16>(matrices, end, stats.wasm_16bit);
+  }
+#endif
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
   std::cerr << "AVX2 8bit, 100 samples..." << std::endl;
   for (int samples = 0; samples < kSamples; ++samples) {
@@ -195,7 +211,11 @@ int main(int, char ** argv) {
   for (std::size_t i = 0; i < sizeof(matrices) / sizeof(RandomMatrices); ++i) {
     std::cout << "Multiply\t" << matrices[i].A_rows << '\t' << matrices[i].width << '\t' << matrices[i].B_cols << '\t' << "Samples=" << (kOutlierThreshold * stats.sse2_16bit[i].size()) << '\n';
     Print<SSSE3::Kernels8>(stats.ssse3_8bit, i);
+#ifdef __wasm__
+    Print<Wasm::Kernels8>(stats.wasm_8bit, i);
+#else
     Print<AVX2::Kernels8>(stats.avx2_8bit, i);
+#endif
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX512BW
     Print<AVX512BW::Kernels8>(stats.avx512_8bit, i);
 #endif
@@ -203,7 +223,11 @@ int main(int, char ** argv) {
     Print<AVX512VNNI::Kernels8>(stats.avx512vnni_8bit, i);
 #endif
     Print<SSE2::Kernels16>(stats.sse2_16bit, i);
+#ifdef __wasm__
+    Print<Wasm::Kernels16>(stats.wasm_16bit, i);
+#else
     Print<AVX2::Kernels16>(stats.avx2_16bit, i);
+#endif
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX512BW
     Print<AVX512BW::Kernels16>(stats.avx512_16bit, i);
 #endif

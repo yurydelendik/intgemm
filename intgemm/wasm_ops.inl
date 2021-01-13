@@ -1,4 +1,4 @@
-//#define WASM_ENABLED_FOR_WORMHOLE 1
+#define WASM_ENABLED_FOR_WORMHOLE 1
 
 static inline __m128i _mm_cmpneq_ps(__m128 a, __m128 b) {
   return a != b;

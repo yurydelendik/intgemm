@@ -12,6 +12,12 @@
 #include "kernels/implementations.inl"
 #undef KERNELS_THIS_IS_SSE2
 
+#ifdef INTGEMM_COMPILER_SUPPORTS_WASM
+#define KERNELS_THIS_IS_WASM
+#include "kernels/implementations.inl"
+#undef KERNELS_THIS_IS_WASM
+#endif
+
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 #define KERNELS_THIS_IS_AVX2
 #include "kernels/implementations.inl"

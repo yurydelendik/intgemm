@@ -4,6 +4,7 @@
 #include "../intgemm/avx512_gemm.h"
 #include "../intgemm/sse2_gemm.h"
 #include "../intgemm/ssse3_gemm.h"
+#include "../intgemm/wasm_gemm.h"
 #include "../intgemm/stats.h"
 
 #include <cmath>
@@ -128,6 +129,11 @@ TEST_CASE ("Quantize SSSE3", "[quantize]") {
   TestMany<SSSE3::Kernels8>(1);
 }
 
+TEST_CASE ("Quantize Wasm", "[quantize]") {
+  if (kCPU < CPUType::SSSE3) return;
+  TestMany<Wasm::Kernels8>(1);
+}
+
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 TEST_CASE ("Quantize AVX2", "[quantize]") {
   if (kCPU < CPUType::AVX2) return;
@@ -158,6 +164,24 @@ TEST_CASE("QuantizeStd SSSE3", "[VectorMeanStd]") {
   testVectorMeanStd<SSE2::VectorMeanStd>(120832);
   testVectorMeanStd<SSE2::VectorMeanStd>(120832, true);
 }
+
+#ifdef __wasm__
+TEST_CASE("QuantizeStd Wasm", "[VectorMeanStd]") {
+  if (kCPU < CPUType::SSSE3) return;
+  testVectorMeanStd<SSE2::VectorMeanStd>(64);
+  testVectorMeanStd<SSE2::VectorMeanStd>(64, true);
+  testVectorMeanStd<SSE2::VectorMeanStd>(256);
+  testVectorMeanStd<SSE2::VectorMeanStd>(256, true);
+  testVectorMeanStd<SSE2::VectorMeanStd>(2048);
+  testVectorMeanStd<SSE2::VectorMeanStd>(2048, true);
+  testVectorMeanStd<SSE2::VectorMeanStd>(65536);
+  testVectorMeanStd<SSE2::VectorMeanStd>(65536, true);
+  testVectorMeanStd<SSE2::VectorMeanStd>(81920);
+  testVectorMeanStd<SSE2::VectorMeanStd>(81920, true);
+  testVectorMeanStd<SSE2::VectorMeanStd>(120832);
+  testVectorMeanStd<SSE2::VectorMeanStd>(120832, true);
+}
+#endif
 
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 TEST_CASE("QuantizeStd AVX2", "[VectorMeanStd]") {
