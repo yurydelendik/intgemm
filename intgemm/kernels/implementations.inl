@@ -156,10 +156,12 @@ CPU_ATTR inline vi multiply<int16_t>(vi a, vi b) {
 
 template <>
 CPU_ATTR inline vi multiply<int>(vi a, vi b) {
-#if defined(KERNELS_THIS_IS_SSE2)
+#if defined(KERNELS_THIS_IS_SSE2) && !defined(__wasm__)
   auto even = mul_epu32(a, b);
   auto odd = mul_epu32(_mm_srli_si128(a, 4), _mm_srli_si128(b, 4));
   return unpacklo_epi32(_mm_shuffle_epi32(even, 0x8 /* = 0 0 2 0 */), _mm_shuffle_epi32(odd, 0x8 /* = 0 0 2 0 */));
+#elif defined(__wasm__)
+  return mullo_epi32(a, b);
 #elif defined(KERNELS_THIS_IS_AVX2)
   return _mm256_mullo_epi32(a, b);
 #else

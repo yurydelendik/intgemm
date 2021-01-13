@@ -230,6 +230,9 @@ static inline __m128 max_epi16(__m128 a, __m128 b) {
 static inline __m128i mullo_epi16(__m128i a, __m128i b) {
   return ((__i16x8)a) * ((__i16x8)b);
 }
+static inline __m128i mullo_epi32(__m128i a, __m128i b) {
+  return ((__i32x4)a) * ((__i32x4)b);
+}
 static inline __m128i mul_epu32(__m128i a, __m128i b) {
   // TODO https://bugzilla.mozilla.org/show_bug.cgi?id=1682466
   // pmuludq xmm, xmm
