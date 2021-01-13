@@ -1,4 +1,4 @@
-//js --wasm-compiler=ion --wasm-simd-wormhole run-test-js.js
+// js --wasm-compiler=ion --wasm-simd-wormhole run-test-js.js
 async function init() {
   const stub_buf = read("./wasi-stub.wasm", "binary");
   let memory;
@@ -34,7 +34,8 @@ async function init() {
     },
   });
 
-  const buf = read("./wasm/tests", "binary");
+  const prog = scriptArgs[0] || "tests.wasm";
+  const buf = read(prog, "binary");
   const imports = {
     wasi_snapshot_preview1: stub.instance.exports,
   };

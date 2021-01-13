@@ -1,9 +1,0 @@
-
-
-```
-mkdir wasm && cd wasm
-cmake -DCMAKE_TOOLCHAIN_FILE=../wasm.cmake -DCMAKE_SYSTEM_NAME=wasm32 -DCMAKE_BUILD_TYPE=Release ..
-wasmtime run --enable-simd tests
-wasmtime run --enable-simd benchmark
-```
-

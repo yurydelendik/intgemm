@@ -1,10 +1,15 @@
-set(CMAKE_SYSTEM_NAME wasm32)
+set(CMAKE_SYSTEM_NAME wasm32-wasi)
 set(CMAKE_SYSTEM_PROCESSOR wasm32)
 
-set(CMAKE_SYSROOT /Users/yury/bin/wasi-sdk/share/wasi-sysroot)
-#set(CMAKE_STAGING_PREFIX /Users/yury/stage)
+if( DEFINED ENV{WASI_PREFIX} )
+    set(tools $ENV{WASI_PREFIX})
+else()
+    message( SEND_ERROR "Undefined WASI_PREFIX." )
+endif()
 
-set(tools /Users/yury/bin/wasi-sdk)
+set(CMAKE_SYSROOT "${tools}/share/wasi-sysroot")
+set(CMAKE_EXECUTABLE_SUFFIX_CXX ".wasm")
+
 set(CMAKE_C_COMPILER ${tools}/bin/clang)
 set(CMAKE_CXX_COMPILER ${tools}/bin/clang++)
 set(CMAKE_CXX_FLAGS "-fno-exceptions -m32 -msimd128")
