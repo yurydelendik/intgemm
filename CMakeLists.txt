@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
+if(COMPILE_WASM)
+  set(CMAKE_C_COMPILER_WORKS 1)
+  set(CMAKE_CXX_COMPILER_WORKS 1)
+endif()
+
 project(intgemm)
 string(ASCII 27 Esc)
 set(Orange "${Esc}[33m")
@@ -77,6 +82,13 @@ endif()
 if (COMPILE_WASM)
     # A compile defintion to compile intgemm on WASM platform
     target_compile_definitions(intgemm PUBLIC WASM)
+
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    set(CMAKE_CXX_FLAGS "-m32 -msimd128")
+    set(CMAKE_CXX_LINK_FLAGS " -s ALLOW_MEMORY_GROWTH=1")
+
+    # <iostream> needs some compat headers
+    include_directories($ENV{EMSCRIPTEN}/system/include/compat)
 endif()
 
 option(WORMHOLE "Use WASM wormhole https://bugzilla.mozilla.org/show_bug.cgi?id=1672160" OFF)
@@ -125,7 +137,9 @@ add_executable(tests
 )
 target_link_libraries(tests intgemm)
 
+if(NOT COMPILE_WASM)
 #CTest integration with Catch2
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMake/Catch.cmake)
 include(CTest)
 catch_discover_tests(tests)
+endif()

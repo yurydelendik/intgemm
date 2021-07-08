@@ -1,9 +1,16 @@
 #pragma once
 #include <exception>
+#ifndef WASM
 #ifdef INTGEMM_COMPILER_SUPPORTS_AVX2
 #include <immintrin.h>
 #endif
 #include <emmintrin.h>
+#else
+#include <wasm_simd128.h>
+typedef v128_t __m128i;
+typedef __f32x4 __m128;
+typedef __f64x2 __m128d;
+#endif
 
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)
 /* MSVC does not appear to have target attributes but is also fine with just
