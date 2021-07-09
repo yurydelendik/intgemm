@@ -85,7 +85,7 @@ if (COMPILE_WASM)
 
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
     set(CMAKE_CXX_FLAGS "-m32 -msimd128")
-    set(CMAKE_CXX_LINK_FLAGS " -s ALLOW_MEMORY_GROWTH=1")
+    set(CMAKE_CXX_LINK_FLAGS " -s ALLOW_MEMORY_GROWTH=1 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s STANDALONE_WASM=1")
 
     # <iostream> needs some compat headers
     include_directories($ENV{EMSCRIPTEN}/system/include/compat)

@@ -521,6 +521,7 @@ INTGEMM_AVX2 inline static void InnerINTGEMM_AVX2(
 }
 #endif
 
+#ifndef WASM
 // For INTGEMM_SSSE3 without AVX
 INTGEMM_SSSE3 inline static void InnerINTGEMM_SSSE3(
     __m128i a, const __m128i *b,
@@ -536,6 +537,40 @@ INTGEMM_SSSE3 inline static void InnerINTGEMM_SSSE3(
   sum6 = adds_epi16(sum6, maddubs_epi16(a_positive, sign_epi8(b[6], a)));
   sum7 = adds_epi16(sum7, maddubs_epi16(a_positive, sign_epi8(b[7], a)));
 }
+#else
+
+# if 0
+static void 
+maddubs_signed_x8(const __m128i *a, const __m128i *b,
+    __m128i *sum0, __m128i *sum1, __m128i *sum2, __m128i *sum3,
+    __m128i *sum4, __m128i *sum5, __m128i *sum6, __m128i *sum7) {
+  __m128i a_positive = abs_epi8(*a);
+  *sum0 = adds_epi16(*sum0, maddubs_epi16(a_positive, sign_epi8(b[0], *a)));
+  *sum1 = adds_epi16(*sum1, maddubs_epi16(a_positive, sign_epi8(b[1], *a)));
+  *sum2 = adds_epi16(*sum2, maddubs_epi16(a_positive, sign_epi8(b[2], *a)));
+  *sum3 = adds_epi16(*sum3, maddubs_epi16(a_positive, sign_epi8(b[3], *a)));
+  *sum4 = adds_epi16(*sum4, maddubs_epi16(a_positive, sign_epi8(b[4], *a)));
+  *sum5 = adds_epi16(*sum5, maddubs_epi16(a_positive, sign_epi8(b[5], *a)));
+  *sum6 = adds_epi16(*sum6, maddubs_epi16(a_positive, sign_epi8(b[6], *a)));
+  *sum7 = adds_epi16(*sum7, maddubs_epi16(a_positive, sign_epi8(b[7], *a)));
+}
+# else
+extern "C" void
+__attribute__((import_module("intgemm"))) __attribute__((import_name("maddubs_signed_x8")))
+maddubs_signed_x8(const __m128i *a, const __m128i *b,
+    __m128i *sum0, __m128i *sum1, __m128i *sum2, __m128i *sum3,
+    __m128i *sum4, __m128i *sum5, __m128i *sum6, __m128i *sum7);
+# endif 
+
+// For INTGEMM_SSSE3 for Wasm
+INTGEMM_SSSE3 inline static void InnerINTGEMM_SSSE3(
+    __m128i a, const __m128i *b,
+    __m128i &sum0, __m128i &sum1, __m128i &sum2, __m128i &sum3,
+    __m128i &sum4, __m128i &sum5, __m128i &sum6, __m128i &sum7) {
+    maddubs_signed_x8(&a, b, &sum0, &sum1, &sum2, &sum3, &sum4, &sum5, &sum6, &sum7);
+}
+#endif
+
 //INTGEMM_AVX2 or INTGEMM_SSSE3 multiply
 #define INTGEMM_MULTIPLY8(Register, target, cpu_type) \
   template <typename Callback> target static void Multiply(const int8_t *A, const int8_t *B, Index A_rows, Index width, Index B_cols, Callback callback) { \
